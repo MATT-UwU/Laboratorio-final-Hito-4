@@ -54,6 +54,8 @@ return [
     // Si está desactivado o no responde, el agente usa las reglas deterministas.
     'llm' => [
         'habilitado' => (bool) env('AGENTE_LLM', false),
+        'url'        => env('LLM_URL', ''),     // p. ej. https://<POD_ID>-8000.proxy.runpod.net
+        'token'      => env('LLM_API_TOKEN', ''),
     ],
 
     // Dispositivo de alerta físico (ESP32): token propio, solo lectura del estado.

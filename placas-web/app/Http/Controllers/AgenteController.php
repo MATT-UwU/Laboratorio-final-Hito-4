@@ -137,8 +137,9 @@ class AgenteController extends Controller
      */
     private function chatConLlm(string $mensaje): ?array
     {
-        $url = rtrim((string) config('services.inference.url', ''), '/');
-        $token = (string) config('services.inference.token', '');
+        // El LLM corre en RunPod (LLM_URL); si no se configuró, se usa el mismo servidor de inferencia.
+        $url = rtrim((string) (config('services.llm.url') ?: config('services.inference.url', '')), '/');
+        $token = (string) (config('services.llm.token') ?: config('services.inference.token', ''));
         if ($url === '' || $token === '') {
             return null;
         }
