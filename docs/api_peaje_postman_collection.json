@@ -7,11 +7,16 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "https://peaje.tudominio.com",
+      "value": "https://peaje.xn--camaracomercioespaola-tbc.tech",
       "type": "string"
     },
     {
       "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "device_token",
       "value": "",
       "type": "string"
     }
@@ -40,8 +45,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/google",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "google"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google"
+              ]
             },
             "description": "Recibe el token de Google desde la app móvil o web y devuelve el token de sesión Bearer (Sanctum) tras validar la lista blanca de usuarios autorizados."
           }
@@ -82,8 +94,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/pasos/frame",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "pasos", "frame"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pasos",
+                "frame"
+              ]
             },
             "description": "Recibe un frame de la cámara desde la app móvil, envía a inferencia (M1+M2+M3), descuenta saldo, registra el paso, genera alertas si aplica y emite el evento en tiempo real vía Server-Sent Events (SSE)."
           }
@@ -104,10 +123,46 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/casetas/1/resumen",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "casetas", "1", "resumen"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "casetas",
+                "1",
+                "resumen"
+              ]
             },
             "description": "Devuelve el conteo de vehículos, recaudación acumulada del día y alertas de la caseta indicada."
+          }
+        },
+        {
+          "name": "Listar casetas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/casetas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "casetas"
+              ]
+            },
+            "description": "Lista de casetas (id, nombre, ubicación) para el selector de la app."
           }
         }
       ]
@@ -139,8 +194,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/placas/consultar",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "placas", "consultar"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "placas",
+                "consultar"
+              ]
             },
             "description": "Consulta el estado de una placa ingresada en texto. Normaliza caracteres, sugiere correcciones de OCR y responde uno de los 4 estados del sistema."
           }
@@ -171,8 +233,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/placas/consultar-imagen",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "placas", "consultar-imagen"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "placas",
+                "consultar-imagen"
+              ]
             },
             "description": "Extrae el texto de la placa mediante M1 + OCR y devuelve su estado en la base de datos."
           }
@@ -193,10 +262,46 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/placas/2M12/historial",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "placas", "2M12", "historial"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "placas",
+                "2M12",
+                "historial"
+              ]
             },
             "description": "Devuelve la lista paginada de todos los pasos registrados para una placa específica con fecha, hora, caseta y tarifa."
+          }
+        },
+        {
+          "name": "Placas filtradas (2…2 · M)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/placas-filtradas?limite=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "placas-filtradas"
+              ]
+            },
+            "description": "Placas cuya parte numérica empieza y termina en 2 y cuyas letras contienen M."
           }
         }
       ]
@@ -228,8 +333,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/agente/chat",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "agente", "chat"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "agente",
+                "chat"
+              ]
             },
             "description": "Interacción conversacional con el agente de peaje. Extrae placas del mensaje, busca en la BD y responde de acuerdo a las 4 condiciones del hito."
           }
@@ -255,8 +367,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/vehiculos?q=",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "vehiculos"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehiculos"
+              ],
               "query": [
                 {
                   "key": "q",
@@ -290,9 +408,49 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/vehiculos",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "vehiculos"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vehiculos"
+              ]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Dispositivo de alerta (ESP32)",
+      "item": [
+        {
+          "name": "Estado para el dispositivo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Token",
+                "value": "{{device_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dispositivo/estado",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dispositivo",
+                "estado"
+              ]
+            },
+            "description": "Usado por el ESP32: estado de la inferencia, último paso y última alerta. Autenticado con X-Device-Token."
           }
         }
       ]
