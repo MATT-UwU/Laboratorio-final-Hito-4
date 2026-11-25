@@ -163,11 +163,74 @@ class AgenteController extends Controller
                 'type' => 'function',
                 'function' => [
                     'name' => 'historial_placa',
-                    'description' => 'Devuelve los últimos pasos registrados de una placa (fecha, caseta, categoría, ejes, monto, estado).',
+                    'description' => 'Devuelve los últimos pasos registrados de una placa (fecha, caseta, categoría, ejes, pasajeros, monto, estado).',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => ['placa' => ['type' => 'string']],
                         'required' => ['placa'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'datos_vehiculo',
+                    'description' => 'Datos del vehículo registrado con esa placa: propietario, categoría, ejes, saldo en Bs y si está activo.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => ['placa' => ['type' => 'string']],
+                        'required' => ['placa'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'resumen_del_dia',
+                    'description' => 'Resumen de HOY: cantidad de pasos, recaudación en Bs (pasos cobrados), pasos por estado y por caseta. '
+                        . 'Opcionalmente de una sola caseta (por nombre o id, p. ej. "Norte").',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => ['caseta' => ['type' => 'string', 'description' => 'Nombre o id de la caseta; vacío = todas']],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'alertas',
+                    'description' => 'Alertas del sistema (placa no registrada / sin saldo): cuántas hay pendientes y las últimas 10 con placa, caseta y fecha.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'solo_pendientes' => ['type' => 'boolean', 'description' => 'true = solo sin atender (por defecto)'],
+                            'solo_hoy' => ['type' => 'boolean', 'description' => 'true = solo las de hoy'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'placas_filtradas',
+                    'description' => 'Placas detectadas que cumplen el filtro del estudiante (números empiezan y terminan en 2, letras contienen M).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => ['solo_hoy' => ['type' => 'boolean']],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'tarifas',
+                    'description' => 'Tarifas vigentes en Bs por categoría (moto, auto, minibus, camion, bus) y número de ejes.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'categoria' => ['type' => 'string', 'enum' => ['moto', 'auto', 'minibus', 'camion', 'bus']],
+                            'ejes' => ['type' => 'integer'],
+                        ],
                     ],
                 ],
             ],
@@ -178,7 +241,9 @@ class AgenteController extends Controller
                 . 'Para cualquier pregunta sobre una placa DEBES llamar a una herramienta y responder SOLO con los datos que devuelve; '
                 . 'nunca inventes fechas, montos ni propietarios. Usa el estado devuelto: registrada_con_paso, registrada_sin_paso, '
                 . 'identificada_no_registrada (posible evasión) o no_existe. Si hay sugerencias, pregunta "¿Quisiste decir…?". '
-                . 'Si el usuario no da una placa, pídesela. No respondas temas ajenos al peaje.'],
+                . 'También puedes informar datos del vehículo, el resumen del día (pasos y recaudación por caseta), alertas, '
+                . 'placas filtradas y tarifas, siempre usando las herramientas. Montos en Bs. '
+                . 'Si el usuario pregunta por una placa sin darla, pídesela. No respondas temas ajenos al peaje.'],
             ['role' => 'user', 'content' => $mensaje],
         ];
 
@@ -216,26 +281,7 @@ class AgenteController extends Controller
                     if (is_string($args)) {
                         $args = json_decode($args, true) ?: [];
                     }
-                    $placaTexto = (string) ($args['placa'] ?? '');
-                    $placa = Vehiculo::extraerPlacaBoliviana($placaTexto) ?? Vehiculo::normalizar($placaTexto);
-
-                    if ($placa === '') {
-                        $resultado = ['error' => 'Placa vacía o inválida'];
-                    } elseif ($nombre === 'historial_placa') {
-                        $resultado = [
-                            'placa' => $placa,
-                            'pasos' => \App\Models\Paso::with('caseta')->where('placa_normalizada', $placa)
-                                ->latest()->limit(5)->get()
-                                ->map(fn ($p) => [
-                                    'fecha' => $p->created_at->format('d/m/Y H:i'), 'caseta' => $p->caseta?->nombre,
-                                    'categoria' => $p->categoria_detectada, 'ejes' => $p->ejes_detectados,
-                                    'monto_bs' => $p->monto, 'estado' => $p->estado,
-                                ])->all(),
-                        ];
-                    } else {
-                        $ultimoEstado = $this->estadoPlaca($placa);
-                        $resultado = $this->resumenParaLlm($ultimoEstado);
-                    }
+                    $resultado = $this->ejecutarHerramienta($nombre, is_array($args) ? $args : [], $ultimoEstado);
 
                     $mensajes[] = ['role' => 'tool', 'content' => json_encode($resultado, JSON_UNESCAPED_UNICODE)];
                 }
@@ -245,6 +291,130 @@ class AgenteController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Ejecuta una herramienta pedida por el LLM. Todas son de SOLO LECTURA sobre la base de datos.
+     * $ultimoEstado se actualiza cuando se consulta el estado de una placa (para devolver 'datos').
+     */
+    private function ejecutarHerramienta(string $nombre, array $args, ?array &$ultimoEstado): array
+    {
+        $placaDe = function () use ($args): string {
+            $texto = (string) ($args['placa'] ?? '');
+            return Vehiculo::extraerPlacaBoliviana($texto) ?? Vehiculo::normalizar($texto);
+        };
+        $casetaDe = function () use ($args) {
+            $texto = trim((string) ($args['caseta'] ?? ''));
+            if ($texto === '') {
+                return null;
+            }
+            return \App\Models\Caseta::where('nombre', 'like', '%' . $texto . '%')
+                ->orWhere('id', is_numeric($texto) ? (int) $texto : 0)->first();
+        };
+
+        switch ($nombre) {
+            case 'consultar_placa':
+                $placa = $placaDe();
+                if ($placa === '') {
+                    return ['error' => 'Placa vacía o inválida'];
+                }
+                $ultimoEstado = $this->estadoPlaca($placa);
+                return $this->resumenParaLlm($ultimoEstado);
+
+            case 'historial_placa':
+                $placa = $placaDe();
+                if ($placa === '') {
+                    return ['error' => 'Placa vacía o inválida'];
+                }
+                return [
+                    'placa' => $placa,
+                    'pasos' => \App\Models\Paso::with('caseta')->where('placa_normalizada', $placa)
+                        ->latest()->limit(5)->get()
+                        ->map(fn ($p) => [
+                            'fecha' => $p->created_at->format('d/m/Y H:i'), 'caseta' => $p->caseta?->nombre,
+                            'categoria' => $p->categoria_detectada, 'ejes' => $p->ejes_detectados,
+                            'pasajeros' => $p->pasajeros, 'monto_bs' => $p->monto, 'estado' => $p->estado,
+                        ])->all(),
+                ];
+
+            case 'datos_vehiculo':
+                $placa = $placaDe();
+                $v = $placa !== '' ? Vehiculo::where('placa', $placa)->first() : null;
+                if (!$v) {
+                    return ['placa' => $placa, 'registrado' => false, 'sugerencias' => $placa !== '' ? $this->sugerencias($placa) : []];
+                }
+                return [
+                    'placa' => $v->placa, 'registrado' => true, 'propietario' => $v->propietario,
+                    'categoria' => $v->categoria, 'ejes' => $v->ejes, 'saldo_bs' => $v->saldo, 'activo' => (bool) $v->activo,
+                ];
+
+            case 'resumen_del_dia':
+                $caseta = $casetaDe();
+                $q = \App\Models\Paso::whereDate('created_at', today());
+                if ($caseta) {
+                    $q->where('caseta_id', $caseta->id);
+                }
+                $porCaseta = \App\Models\Paso::with('caseta')->whereDate('created_at', today())
+                    ->selectRaw("caseta_id, count(*) as pasos, sum(case when estado = 'ok' then monto else 0 end) as recaudado, sum(monto) as calculado")
+                    ->groupBy('caseta_id')->get()
+                    ->map(fn ($r) => ['caseta' => $r->caseta?->nombre, 'pasos' => (int) $r->pasos, 'recaudado_bs' => round((float) $r->recaudado, 2), 'monto_calculado_bs' => round((float) $r->calculado, 2)])
+                    ->all();
+                return [
+                    'fecha' => today()->format('d/m/Y'),
+                    'caseta' => $caseta?->nombre ?? 'todas',
+                    'pasos' => (clone $q)->count(),
+                    'recaudado_bs' => round((float) (clone $q)->where('estado', 'ok')->sum('monto'), 2),
+                    'monto_total_calculado_bs' => round((float) (clone $q)->sum('monto'), 2),
+                    'por_estado' => (clone $q)->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado'),
+                    'por_caseta' => $caseta ? null : $porCaseta,
+                ];
+
+            case 'alertas':
+                $soloPendientes = ($args['solo_pendientes'] ?? true) !== false;
+                $q = \App\Models\Alerta::with('paso.caseta')->latest();
+                if ($soloPendientes) {
+                    $q->where('atendida', false);
+                }
+                if (($args['solo_hoy'] ?? false) === true) {
+                    $q->whereDate('created_at', today());
+                }
+                return [
+                    'pendientes_total' => \App\Models\Alerta::where('atendida', false)->count(),
+                    'alertas' => $q->limit(10)->get()->map(fn ($a) => [
+                        'fecha' => $a->created_at->format('d/m/Y H:i'), 'tipo' => $a->tipo, 'atendida' => (bool) $a->atendida,
+                        'placa' => $a->paso?->placa_normalizada, 'caseta' => $a->paso?->caseta?->nombre,
+                    ])->all(),
+                ];
+
+            case 'placas_filtradas':
+                $q = \App\Models\PlacaFiltrada::with('caseta')->latest();
+                if (($args['solo_hoy'] ?? false) === true) {
+                    $q->whereDate('created_at', today());
+                }
+                return [
+                    'regla' => \App\Support\FiltroPlaca::descripcion(),
+                    'total' => (clone $q)->count(),
+                    'placas_distintas' => (clone $q)->distinct('placa')->count('placa'),
+                    'ultimas' => $q->limit(10)->get()->map(fn ($p) => [
+                        'placa' => $p->placa, 'fecha' => $p->created_at->format('d/m/Y H:i'),
+                        'origen' => $p->origen, 'caseta' => $p->caseta?->nombre,
+                    ])->all(),
+                ];
+
+            case 'tarifas':
+                $q = \App\Models\Tarifa::where('activa', true)->orderBy('categoria')->orderBy('ejes');
+                if (!empty($args['categoria'])) {
+                    $q->where('categoria', strtolower((string) $args['categoria']));
+                }
+                if (!empty($args['ejes'])) {
+                    $q->where('ejes', (int) $args['ejes']);
+                }
+                return ['tarifas' => $q->get(['categoria', 'ejes', 'monto'])->map(fn ($t) => [
+                    'categoria' => $t->categoria, 'ejes' => $t->ejes, 'monto_bs' => $t->monto,
+                ])->all()];
+        }
+
+        return ['error' => "Herramienta desconocida: {$nombre}"];
     }
 
     /** Versión compacta del estado de una placa para enviar al LLM (sin modelos Eloquent completos). */
