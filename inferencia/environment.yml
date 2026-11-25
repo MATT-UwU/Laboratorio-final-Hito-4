@@ -1,0 +1,23 @@
+# Entorno conda/mamba del servidor de inferencia (M1 + M2 + M3 + pasajeros).
+# Crear:   mamba env create -f environment.yml      (o: conda env create -f environment.yml)
+# Activar: conda activate peaje-inferencia
+# Versiones exactas del entorno ya creado: mamba env export -n peaje-inferencia > environment.lock.yml
+name: peaje-inferencia
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - tesseract
+  - pip:
+      - fastapi==0.115.6
+      - uvicorn[standard]==0.34.0
+      - python-multipart==0.0.20
+      - numpy==1.26.4
+      - torch==2.5.1
+      - torchvision==0.20.1
+      - opencv-python-headless==4.10.0.84
+      - ultralytics==8.3.40
+      - onnxruntime-gpu==1.20.0
+      - easyocr==1.7.2
+      - pytesseract==0.3.13

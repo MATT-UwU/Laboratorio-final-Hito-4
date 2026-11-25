@@ -1,0 +1,19 @@
+# Entorno conda/mamba de los notebooks de entrenamiento (M2 segmentación y M3 keypoints).
+# Crear:   mamba env create -f environment-entrenamiento.yml
+# Activar: conda activate peaje-entrenamiento
+# Versiones exactas: mamba env export -n peaje-entrenamiento > environment-entrenamiento.lock.yml
+name: peaje-entrenamiento
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - torch==2.5.1
+      - torchvision==0.20.1
+      - ultralytics==8.3.40
+      - roboflow==1.1.50
+      - pandas==2.2.3
+      - matplotlib==3.9.3
+      - pyyaml==6.0.2
+      - opencv-python-headless==4.10.0.84
