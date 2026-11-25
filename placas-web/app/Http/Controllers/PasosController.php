@@ -264,6 +264,7 @@ class PasosController extends Controller
     {
         $evento = json_encode([
             'cumple_filtro' => $cumpleFiltro,
+            'overlay'       => $paso->overlay,
             'id'          => $paso->id,
             'placa'       => $paso->placa_normalizada ?? $paso->placa_leida,
             'categoria'   => $paso->categoria_detectada,

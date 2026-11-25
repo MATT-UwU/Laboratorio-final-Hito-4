@@ -48,35 +48,18 @@
             </h3>
             <span class="text-xs text-gray-400">Actualización en tiempo real</span>
         </div>
-        <div class="overflow-auto max-h-[500px]">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-700/50 sticky top-0">
-                    <tr class="text-gray-400 text-xs uppercase">
-                        <th class="text-left p-3">Placa</th>
-                        <th class="text-left p-3">Categoría</th>
-                        <th class="text-left p-3">Ejes</th>
-                        <th class="text-left p-3">Pasajeros</th>
-                        <th class="text-left p-3">Monto</th>
-                        <th class="text-left p-3">Estado</th>
-                        <th class="text-left p-3">Caseta</th>
-                        <th class="text-left p-3">Hora</th>
-                    </tr>
-                </thead>
-                <tbody id="pasos-tabla">
-                    @foreach($ultimosPasos as $paso)
-                    <tr class="border-b border-gray-700 hover:bg-gray-700/30 transition-colors">
-                        <td class="p-3 font-mono font-bold text-white">{{ $paso->placa_normalizada ?? $paso->placa_leida ?? '—' }}</td>
-                        <td class="p-3 capitalize text-gray-300">{{ $paso->categoria_detectada ?? '—' }}</td>
-                        <td class="p-3 text-gray-300">{{ $paso->ejes_detectados ?? '—' }}</td>
-                        <td class="p-3 text-gray-300">{{ $paso->pasajeros ?? '—' }}</td>
-                        <td class="p-3 text-green-400 font-semibold">{{ $paso->monto ? 'Bs '.$paso->monto : '—' }}</td>
-                        <td class="p-3"><span class="badge-{{ $paso->estado }}">{{ $paso->estado }}</span></td>
-                        <td class="p-3 text-gray-400">{{ $paso->caseta?->nombre ?? '—' }}</td>
-                        <td class="p-3 text-gray-500 text-xs">{{ $paso->created_at->format('H:i:s') }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="px-4 pt-3 leyenda-inferencia text-xs text-gray-400">
+            <span><i style="background:#22d3ee"></i>Vehículo</span>
+            <span><i style="background:#facc15"></i>Placa</span>
+            <span><i style="background:#e879f9"></i>Pasajeros</span>
+            <span><i style="background:#fb923c;border-radius:50%"></i>Llantas</span>
+        </div>
+        <div class="overflow-auto max-h-[720px] p-4">
+            <div id="pasos-tarjetas" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($ultimosPasos as $paso)
+                    @include('pasos._tarjeta', ['paso' => $paso])
+                @endforeach
+            </div>
         </div>
     </div>
 
@@ -123,6 +106,7 @@
 @endsection
 
 @push('scripts')
+@include('pasos._tarjetas-js')
 <script>
 let totalPasos = {{ $totalPasosHoy }};
 let recaudacion = {{ $recaudacionHoy }};
@@ -145,29 +129,8 @@ document.addEventListener('nuevo-paso', function(e) {
         document.getElementById('stat-alertas').textContent = totalAlertas;
     }
 
-    // Insertar fila en la tabla
-    const badgeClasses = {
-        ok: 'badge-ok', alerta: 'badge-alerta',
-        sin_saldo: 'badge-sin_saldo', no_registrado: 'badge-no_registrado'
-    };
-    const badge = badgeClasses[p.estado] || 'badge-ok';
-
-    const fila = `<tr class="paso-row border-b border-gray-700 hover:bg-gray-700/30 transition-colors">
-        <td class="p-3 font-mono font-bold text-white">${p.placa || '—'}</td>
-        <td class="p-3 capitalize text-gray-300">${p.categoria || '—'}</td>
-        <td class="p-3 text-gray-300">${p.ejes || '—'}</td>
-        <td class="p-3 text-gray-300">${p.pasajeros ?? '—'}</td>
-        <td class="p-3 text-green-400 font-semibold">${p.monto ? 'Bs ' + p.monto : '—'}</td>
-        <td class="p-3"><span class="${badge}">${p.estado}</span></td>
-        <td class="p-3 text-gray-400">${p.caseta || '—'}</td>
-        <td class="p-3 text-gray-500 text-xs">${p.hora}</td>
-    </tr>`;
-
-    const tabla = document.getElementById('pasos-tabla');
-    tabla.insertAdjacentHTML('afterbegin', fila);
-
-    // Mantener máximo 50 filas
-    while (tabla.children.length > 50) tabla.removeChild(tabla.lastChild);
+    // Insertar la tarjeta del vehículo con la evidencia y las cajas de la inferencia
+    TarjetaPaso.agregar(document.getElementById('pasos-tarjetas'), p, 20);
 
     // Alerta visual si hay problema
     if (p.tiene_alerta) {

@@ -17,6 +17,29 @@ class Paso extends Model
         'monto' => 'decimal:2',
     ];
 
+    /**
+     * Cajas de la inferencia para dibujar sobre la imagen de evidencia (mismas coordenadas que el frame):
+     * vehículo (M2), placa (M1), pasajeros (segmentación de personas) y llantas (keypoints M3).
+     */
+    public function getOverlayAttribute(): array
+    {
+        $raw = is_array($this->inferencia_raw) ? $this->inferencia_raw : [];
+        $det = $raw['detalles'] ?? [];
+        $caja = fn ($b) => is_array($b) && count($b) === 4 ? array_map(fn ($v) => round((float) $v, 1), array_values($b)) : null;
+
+        return array_filter([
+            'vehiculo' => $caja($det['m2']['box'] ?? null),
+            'categoria' => $det['m2']['categoria'] ?? ($raw['categoria'] ?? null),
+            'placa' => $caja($raw['placa_detalle']['bbox'] ?? ($det['m1']['box'] ?? null)),
+            'placa_texto' => $this->placa_normalizada ?? $this->placa_leida,
+            'personas' => array_values(array_filter(array_map($caja, $det['pasajeros']['cajas'] ?? []))),
+            'llantas' => array_values(array_filter(
+                $raw['keypoints'] ?? ($det['m3']['keypoints'] ?? []),
+                fn ($k) => is_array($k) && count($k) >= 2
+            )),
+        ], fn ($v) => $v !== null && $v !== []);
+    }
+
     public function caseta()
     {
         return $this->belongsTo(Caseta::class);
