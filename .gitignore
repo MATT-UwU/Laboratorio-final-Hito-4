@@ -36,3 +36,6 @@ respaldos_vps/
 # Instaladores y builds
 *.exe
 IAM_yolo_native_app-main/android/build/
+
+# Credenciales del ESP32
+hardware/**/secrets.h

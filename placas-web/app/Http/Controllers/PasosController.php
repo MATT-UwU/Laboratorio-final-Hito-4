@@ -78,6 +78,7 @@ class PasosController extends Controller
         $confianza        = $data['confianza']    ?? null;
         $categoria        = $data['categoria']    ?? 'auto';
         $ejes             = (int)($data['ejes']   ?? 2);
+        $pasajeros        = isset($data['pasajeros']) && is_numeric($data['pasajeros']) ? max(0, min(99, (int) $data['pasajeros'])) : null;
 
         if (($placaLeida !== null && !is_string($placaLeida))
             || ($confianza !== null && !is_numeric($confianza))
@@ -179,6 +180,7 @@ class PasosController extends Controller
             'confianza_ocr'       => $confianza,
             'categoria_detectada' => $categoria,
             'ejes_detectados'     => $ejes,
+            'pasajeros'           => $pasajeros,
             'monto'               => $monto,
             'caseta_id'           => $casetaId,
             'usuario_id'          => $usuario->id,
@@ -266,6 +268,7 @@ class PasosController extends Controller
             'placa'       => $paso->placa_normalizada ?? $paso->placa_leida,
             'categoria'   => $paso->categoria_detectada,
             'ejes'        => $paso->ejes_detectados,
+            'pasajeros'   => $paso->pasajeros,
             'monto'       => $paso->monto,
             'estado'      => $paso->estado,
             'caseta'      => $paso->caseta?->nombre,

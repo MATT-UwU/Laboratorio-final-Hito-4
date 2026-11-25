@@ -15,6 +15,7 @@
                     <th class="text-left p-3">Placa</th>
                     <th class="text-left p-3">Categoría</th>
                     <th class="text-left p-3">Ejes</th>
+                    <th class="text-left p-3">Pasajeros</th>
                     <th class="text-left p-3">Monto</th>
                     <th class="text-left p-3">Estado</th>
                     <th class="text-left p-3">Caseta</th>
@@ -29,6 +30,7 @@
                     <td class="p-3 font-mono font-bold text-white">{{ $paso->placa_normalizada ?? $paso->placa_leida ?? '—' }}</td>
                     <td class="p-3 capitalize text-gray-300">{{ $paso->categoria_detectada ?? '—' }}</td>
                     <td class="p-3 text-gray-300">{{ $paso->ejes_detectados ?? '—' }}</td>
+                    <td class="p-3 text-gray-300">{{ $paso->pasajeros ?? '—' }}</td>
                     <td class="p-3 text-green-400 font-semibold">{{ $paso->monto ? 'Bs '.$paso->monto : '—' }}</td>
                     <td class="p-3"><span class="badge-{{ $paso->estado }}">{{ $paso->estado }}</span></td>
                     <td class="p-3 text-gray-400">{{ $paso->caseta?->nombre ?? '—' }}</td>
@@ -45,7 +47,7 @@
                     <td class="p-3 text-gray-500 text-xs">{{ $paso->created_at->format('d/m/Y H:i:s') }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="9" class="text-center p-8 text-gray-500">No hay pasos registrados aún.</td></tr>
+                <tr><td colspan="10" class="text-center p-8 text-gray-500">No hay pasos registrados aún.</td></tr>
                 @endforelse
             </tbody>
         </table>

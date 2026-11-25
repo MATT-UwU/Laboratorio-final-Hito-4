@@ -55,6 +55,7 @@
                         <th class="text-left p-3">Placa</th>
                         <th class="text-left p-3">Categoría</th>
                         <th class="text-left p-3">Ejes</th>
+                        <th class="text-left p-3">Pasajeros</th>
                         <th class="text-left p-3">Monto</th>
                         <th class="text-left p-3">Estado</th>
                         <th class="text-left p-3">Caseta</th>
@@ -67,6 +68,7 @@
                         <td class="p-3 font-mono font-bold text-white">{{ $paso->placa_normalizada ?? $paso->placa_leida ?? '—' }}</td>
                         <td class="p-3 capitalize text-gray-300">{{ $paso->categoria_detectada ?? '—' }}</td>
                         <td class="p-3 text-gray-300">{{ $paso->ejes_detectados ?? '—' }}</td>
+                        <td class="p-3 text-gray-300">{{ $paso->pasajeros ?? '—' }}</td>
                         <td class="p-3 text-green-400 font-semibold">{{ $paso->monto ? 'Bs '.$paso->monto : '—' }}</td>
                         <td class="p-3"><span class="badge-{{ $paso->estado }}">{{ $paso->estado }}</span></td>
                         <td class="p-3 text-gray-400">{{ $paso->caseta?->nombre ?? '—' }}</td>
@@ -154,6 +156,7 @@ document.addEventListener('nuevo-paso', function(e) {
         <td class="p-3 font-mono font-bold text-white">${p.placa || '—'}</td>
         <td class="p-3 capitalize text-gray-300">${p.categoria || '—'}</td>
         <td class="p-3 text-gray-300">${p.ejes || '—'}</td>
+        <td class="p-3 text-gray-300">${p.pasajeros ?? '—'}</td>
         <td class="p-3 text-green-400 font-semibold">${p.monto ? 'Bs ' + p.monto : '—'}</td>
         <td class="p-3"><span class="${badge}">${p.estado}</span></td>
         <td class="p-3 text-gray-400">${p.caseta || '—'}</td>

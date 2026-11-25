@@ -428,6 +428,7 @@ class _ModoCasetaScreenState extends State<ModoCasetaScreen> {
   String? _placaLeida;
   String? _categoria;
   int? _ejes;
+  int? _pasajeros;
   double? _tarifa;
   String _estado = "ESPERANDO";
   bool _duplicado = false;
@@ -574,6 +575,7 @@ class _ModoCasetaScreenState extends State<ModoCasetaScreen> {
               _placaLeida = null;
               _categoria = null;
               _ejes = null;
+              _pasajeros = null;
               _tarifa = null;
               _estado = 'sin_placa';
             } else {
@@ -581,6 +583,7 @@ class _ModoCasetaScreenState extends State<ModoCasetaScreen> {
               _placaLeida = (paso['placa_normalizada'] ?? paso['placa_leida'])?.toString();
               _categoria = paso['categoria_detectada']?.toString();
               _ejes = aNumero(paso['ejes_detectados'])?.toInt();
+              _pasajeros = aNumero(paso['pasajeros'])?.toInt();
               _tarifa = aNumero(paso['monto'] ?? data['tarifa'])?.toDouble();
               _estado = (paso['estado'] ?? 'ok').toString();
             }
@@ -744,11 +747,14 @@ class _ModoCasetaScreenState extends State<ModoCasetaScreen> {
                   ],
                 ),
                 const Divider(color: Colors.white24, height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: 18,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text("Categoría: ${_categoria ?? '—'}", style: const TextStyle(color: Colors.white70)),
                     Text("Ejes: ${_ejes ?? '—'}", style: const TextStyle(color: Colors.white70)),
+                    Text("Pasajeros: ${_pasajeros ?? '—'}", style: const TextStyle(color: Colors.white70)),
                     Text(
                       _tarifa != null ? "Tarifa: Bs ${_tarifa!.toStringAsFixed(2)}" : "Tarifa: —",
                       style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 15),

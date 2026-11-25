@@ -54,3 +54,22 @@ except ImportError:
 print("=" * 60)
 print("✓ Diagnóstico completado exitosamente.")
 print("=" * 60)
+
+# Con --lock escribe requirements.lock.txt con las versiones EXACTAS instaladas en este entorno
+# (bonificación: "requirements.txt con versiones fijadas para cada servicio").
+if "--lock" in sys.argv:
+    from importlib import metadata
+    paquetes = ["fastapi", "uvicorn", "numpy", "opencv-python-headless", "opencv-python", "ultralytics",
+                "onnxruntime", "onnxruntime-gpu", "pytesseract", "easyocr", "python-multipart",
+                "torch", "torchvision", "roboflow"]
+    lineas = []
+    for p in paquetes:
+        try:
+            lineas.append(f"{p}=={metadata.version(p)}")
+        except metadata.PackageNotFoundError:
+            pass
+    with open("requirements.lock.txt", "w", encoding="utf-8") as f:
+        f.write("# Versiones exactas del entorno de inferencia (generado con: python diagnostico.py --lock)\n")
+        f.write("\n".join(lineas) + "\n")
+    print("Escrito requirements.lock.txt:")
+    print("\n".join(lineas))

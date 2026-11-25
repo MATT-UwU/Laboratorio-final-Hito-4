@@ -52,14 +52,17 @@ app = FastAPI(
 MODELO_M1_PATH = os.environ.get("MODELO_M1_PATH", "modelo/yolo-v9-t-384-license-plates-end2end.onnx")
 MODELO_M2_PATH = os.environ.get("MODELO_M2_PATH", "yolo11n-seg.pt")   # o peso entrenado M2
 MODELO_M3_PATH = os.environ.get("MODELO_M3_PATH", "")  # pesos YOLO-pose entrenados con llantas
+# Bonificación "pasajeros": segmentación de instancias de personas (clase COCO 0 "person").
+MODELO_PASAJEROS_PATH = os.environ.get("MODELO_PASAJEROS_PATH", "yolo11n-seg.pt")
 INFERENCE_API_TOKEN = os.environ.get("INFERENCE_API_TOKEN", "")
 
 m1_session = None
 modelo_m2 = None
 modelo_m3 = None
+modelo_pasajeros = None
 
 def inicializar_modelos():
-    global m1_session, modelo_m2, modelo_m3
+    global m1_session, modelo_m2, modelo_m3, modelo_pasajeros
 
     # M1: ONNX Runtime
     if os.path.exists(MODELO_M1_PATH):
@@ -88,6 +91,13 @@ def inicializar_modelos():
                 print(f"⚠️ Error cargando M3 de llantas: {e}")
         else:
             print("⚠️ M3 de llantas no configurado; se usará la estimación por categoría.")
+
+        # Pasajeros: YOLO11-seg de COCO (solo clase "person"); se descarga solo la primera vez.
+        try:
+            modelo_pasajeros = YOLO(MODELO_PASAJEROS_PATH)
+            print(f"✓ Modelo de pasajeros cargado ({MODELO_PASAJEROS_PATH}) en {DISPOSITIVO}")
+        except Exception as e:
+            print(f"⚠️ Error cargando el modelo de pasajeros: {e}")
 
 @app.on_event("startup")
 def startup_event():
@@ -229,6 +239,57 @@ def inferir_m2_categoria(img_bgr: np.ndarray) -> Dict[str, Any]:
 
     return {"categoria": "auto", "confianza": 0.5, "box": None}
 
+def contar_pasajeros(
+    img_bgr: np.ndarray,
+    caja_vehiculo: Optional[List[float]] = None,
+    umbral_conf: float = 0.35,
+) -> Dict[str, Any]:
+    """
+    Cuenta las personas visibles DENTRO del vehículo con segmentación de instancias.
+    Una persona cuenta como pasajero si al menos el 60 % de su máscara cae dentro de la caja del vehículo.
+    No hay reconocimiento facial ni se guardan recortes: solo se devuelve el conteo y las cajas.
+    """
+    if modelo_pasajeros is None:
+        return {"pasajeros": None, "metodo": "no_disponible"}
+
+    try:
+        res = modelo_pasajeros.predict(img_bgr, classes=[0], conf=umbral_conf, verbose=False)[0]
+        if res.boxes is None or len(res.boxes) == 0:
+            return {"pasajeros": 0, "metodo": "segmentacion", "personas_detectadas": 0, "cajas": []}
+
+        alto, ancho = img_bgr.shape[:2]
+        cajas = []
+        pasajeros = 0
+        for i, box in enumerate(res.boxes):
+            x1, y1, x2, y2 = [float(v) for v in box.xyxy[0].tolist()]
+            dentro = False  # sin vehículo detectado no hay pasajeros
+            if caja_vehiculo:
+                vx1, vy1, vx2, vy2 = caja_vehiculo
+                if res.masks is not None and i < len(res.masks.xy) and len(res.masks.xy[i]) >= 3:
+                    # Polígono de la máscara en coordenadas de la imagen original.
+                    mascara = np.zeros((alto, ancho), dtype=np.uint8)
+                    cv2.fillPoly(mascara, [res.masks.xy[i].astype(np.int32)], 1)
+                    sub = mascara[max(0, int(vy1)):int(vy2), max(0, int(vx1)):int(vx2)]
+                    total = int(mascara.sum())
+                    dentro = total > 0 and (int(sub.sum()) / total) >= 0.6
+                else:
+                    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+                    dentro = vx1 <= cx <= vx2 and vy1 <= cy <= vy2
+            if dentro:
+                pasajeros += 1
+                cajas.append([round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)])
+
+        return {
+            "pasajeros": pasajeros,
+            "metodo": "segmentacion",
+            "personas_detectadas": len(res.boxes),
+            "cajas": cajas,
+        }
+    except Exception as e:
+        print(f"Error contando pasajeros: {e}")
+        return {"pasajeros": None, "metodo": "error"}
+
+
 def inferir_m3_ejes(
     img_bgr: np.ndarray,
     categoria: str,
@@ -335,6 +396,7 @@ def estado():
         "m1_cargado": m1_session is not None,
         "m2_cargado": modelo_m2 is not None,
         "m3_cargado": modelo_m3 is not None,
+        "pasajeros_cargado": modelo_pasajeros is not None,
         "ocr_disponible": EASYOCR_READER is not None or TESSERACT_OK
     }
 
@@ -374,6 +436,9 @@ async def predict(
         caja_vehiculo=res_m2.get("box"),
     )
 
+    # 4. Bonificación: pasajeros dentro del vehículo (segmentación de personas)
+    res_pas = contar_pasajeros(img, caja_vehiculo=res_m2.get("box"))
+
     latencia_ms = round((time.perf_counter() - t0) * 1000, 2)
 
     return {
@@ -381,6 +446,7 @@ async def predict(
         "confianza": res_m1["confianza"],
         "categoria": res_m2["categoria"],
         "ejes": res_m3["ejes"],
+        "pasajeros": res_pas["pasajeros"],
         "latencia_ms": latencia_ms,
         # Formato detallado de la rúbrica (sección 4.7)
         "placa_detalle": {
@@ -398,7 +464,8 @@ async def predict(
         "detalles": {
             "m1": res_m1,
             "m2": res_m2,
-            "m3": res_m3
+            "m3": res_m3,
+            "pasajeros": res_pas,
         }
     }
 

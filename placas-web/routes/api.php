@@ -13,6 +13,10 @@ Route::prefix('v1')->group(function () {
     // Auth — pública
     Route::post('/auth/google', [AuthController::class, 'apiGoogle']);
 
+    // Dispositivo de alerta (ESP32): protegido con su propio token X-Device-Token
+    Route::get('/dispositivo/estado', [\App\Http\Controllers\DispositivoController::class, 'estado'])
+        ->middleware('throttle:120,1');
+
     // Protegidas con token
     Route::middleware('api.token')->group(function () {
 

@@ -50,6 +50,11 @@ return [
         'token' => env('INFERENCE_API_TOKEN', ''),
     ],
 
+    // Dispositivo de alerta físico (ESP32): token propio, solo lectura del estado.
+    'dispositivo' => [
+        'token' => env('DEVICE_TOKEN', ''),
+    ],
+
     'pose_colab' => [
         'url'   => env('POSE_INFERENCE_URL', ''),
         'token' => env('POSE_INFERENCE_API_TOKEN', ''),

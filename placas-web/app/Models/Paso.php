@@ -8,7 +8,7 @@ class Paso extends Model
 {
     protected $fillable = [
         'placa_leida','placa_normalizada','confianza_ocr',
-        'categoria_detectada','ejes_detectados','monto',
+        'categoria_detectada','ejes_detectados','pasajeros','monto',
         'caseta_id','usuario_id','imagen_url','estado','inferencia_raw',
     ];
 
