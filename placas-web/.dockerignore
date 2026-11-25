@@ -1,0 +1,16 @@
+.git
+node_modules
+vendor
+storage
+public/storage
+public/~
+bootstrap/cache/*.php
+python
+img
+INFERENCIA
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+docker-compose.yml
+*.bat

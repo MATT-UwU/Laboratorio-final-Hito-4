@@ -1,0 +1,47 @@
+# Panel web del peaje en producción.
+#   docker compose up -d --build      (desde /var/www/peaje/placas-web)
+# La configuración de Laravel está en .env (se monta en el contenedor; no va en la imagen).
+name: peaje
+
+services:
+  app:
+    image: peaje-app:latest
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    volumes:
+      - ./.env:/var/www/html/.env:ro
+      - ./storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: peaje-web:latest
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:ro
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    env_file: ./docker/db.env
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  mysqldata:

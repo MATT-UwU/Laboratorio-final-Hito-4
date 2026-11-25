@@ -1,0 +1,301 @@
+{
+  "info": {
+    "name": "Sistema Inteligente de Control de Peaje - API REST v1",
+    "description": "Documentación oficial de la API REST del Sistema de Control de Peaje (Laboratorio Final de Hito).\nContiene todos los endpoints de autenticación, casetas, pasos, placas, agente conversacional y gestión de vehículos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://peaje.tudominio.com",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/google",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"GOOGLE_ID_TOKEN_AQUI\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/google",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "google"]
+            },
+            "description": "Recibe el token de Google desde la app móvil o web y devuelve el token de sesión Bearer (Sanctum) tras validar la lista blanca de usuarios autorizados."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Pasos y Casetas",
+      "item": [
+        {
+          "name": "POST /api/v1/pasos/frame",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Frame de la cámara (JPG / PNG)"
+                },
+                {
+                  "key": "caseta_id",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pasos/frame",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pasos", "frame"]
+            },
+            "description": "Recibe un frame de la cámara desde la app móvil, envía a inferencia (M1+M2+M3), descuenta saldo, registra el paso, genera alertas si aplica y emite el evento en tiempo real vía Server-Sent Events (SSE)."
+          }
+        },
+        {
+          "name": "GET /api/v1/casetas/:id/resumen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/casetas/1/resumen",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "casetas", "1", "resumen"]
+            },
+            "description": "Devuelve el conteo de vehículos, recaudación acumulada del día y alertas de la caseta indicada."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Consultas de Placas",
+      "item": [
+        {
+          "name": "POST /api/v1/placas/consultar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"2M12\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/placas/consultar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "placas", "consultar"]
+            },
+            "description": "Consulta el estado de una placa ingresada en texto. Normaliza caracteres, sugiere correcciones de OCR y responde uno de los 4 estados del sistema."
+          }
+        },
+        {
+          "name": "POST /api/v1/placas/consultar-imagen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Fotografía de la placa para OCR"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/placas/consultar-imagen",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "placas", "consultar-imagen"]
+            },
+            "description": "Extrae el texto de la placa mediante M1 + OCR y devuelve su estado en la base de datos."
+          }
+        },
+        {
+          "name": "GET /api/v1/placas/:placa/historial",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/placas/2M12/historial",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "placas", "2M12", "historial"]
+            },
+            "description": "Devuelve la lista paginada de todos los pasos registrados para una placa específica con fecha, hora, caseta y tarifa."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Agente Conversacional",
+      "item": [
+        {
+          "name": "POST /api/v1/agente/chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": \"¿Cuál es el estado de la placa 2M12?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/agente/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "agente", "chat"]
+            },
+            "description": "Interacción conversacional con el agente de peaje. Extrae placas del mensaje, busca en la BD y responde de acuerdo a las 4 condiciones del hito."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Gestión de Vehículos (CRUD)",
+      "item": [
+        {
+          "name": "GET /api/v1/vehiculos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/vehiculos?q=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "vehiculos"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/vehiculos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"2Z82\",\n  \"propietario\": \"Rodrigo Morales\",\n  \"categoria\": \"auto\",\n  \"ejes\": 2,\n  \"saldo\": 150.00,\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/vehiculos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "vehiculos"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

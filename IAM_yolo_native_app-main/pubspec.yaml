@@ -1,0 +1,21 @@
+name: yolo_native_app
+description: YOLO Object Detection con código nativo
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  camera: ^0.10.5
+  permission_handler: ^11.0.1
+  image: ^4.0.17
+  google_sign_in: ^6.2.1
+  image_picker: ^1.0.7
+
+flutter:
+  uses-material-design: true

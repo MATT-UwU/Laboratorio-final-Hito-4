@@ -1,0 +1,38 @@
+# Secretos: nunca subir (rúbrica 7.1). Solo se entregan los .env.example
+.env
+.env.*
+!.env.example
+*.backup
+
+# Entornos locales y binarios pesados
+placas-venv/
+placas-venv.rar
+*.apk
+placas-web/python/placas/modelo/easyocr/
+
+# Flutter
+IAM_yolo_native_app-main/build/
+IAM_yolo_native_app-main/.dart_tool/
+IAM_yolo_native_app-main/android/.gradle/
+IAM_yolo_native_app-main/android/local.properties
+
+# Pesos entrenados (se suben a Drive/Colab, no al repo)
+*.pt
+
+# Varios
+.claude/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Dependencias instaladas (se reinstalan con composer/npm)
+vendor/
+node_modules/
+# Notebook con una API key escrita en el código: NO subir
+Notebooks/roboflow_train_test_tflite_consolidado_v3_(1).ipynb
+# Respaldos locales con secretos (BD y .env del VPS)
+respaldos_vps/
+
+# Instaladores y builds
+*.exe
+IAM_yolo_native_app-main/android/build/
