@@ -53,3 +53,23 @@ Me pasas la URL `https://<POD_ID>-8000.proxy.runpod.net` y la pongo como `INFERE
 ## Versiones fijadas
 
 En el Pod (o en Colab) ejecuta `python diagnostico.py --lock`: escribe `requirements.lock.txt` con las versiones exactas instaladas. Súbelo al repositorio y a la carpeta de evidencias junto con la salida del diagnóstico.
+
+## Agente conversacional con Qwen (LLM propio en el mismo Pod)
+
+`runpod_start.sh` instala **Ollama** y descarga **Qwen 2.5 7B** (`qwen2.5:7b`, ~4,7 GB en `/workspace/ollama`, una sola vez). Ollama escucha solo en `127.0.0.1:11434`; desde Internet se accede por el servidor de inferencia, protegido con el mismo token:
+
+| Ruta | Uso |
+|---|---|
+| `GET /llm/estado` | ¿Ollama responde y el modelo está descargado? |
+| `POST /llm/chat` | Conversación con herramientas (function calling) en formato Ollama |
+
+El agente de Laravel envía la pregunta con dos herramientas (`consultar_placa`, `historial_placa`). Qwen decide cuál llamar, Laravel ejecuta la consulta en la base de datos y Qwen redacta la respuesta **solo con esos datos**. Si el LLM no responde, el agente vuelve automáticamente a las reglas deterministas.
+
+Para activarlo en el VPS (`/var/www/peaje/placas-web/.env`):
+```dotenv
+INFERENCE_URL=https://<POD_ID>-8000.proxy.runpod.net
+AGENTE_LLM=true
+```
+y `docker compose restart app`. La respuesta de `/api/v1/agente/chat` incluye `"motor": "llm"` y el modelo usado.
+
+GPU recomendada para inferencia + Qwen 7B: 16 GB de VRAM o más (RTX A4000, A4500, RTX 3090/4090, A5000).

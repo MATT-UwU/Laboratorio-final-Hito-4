@@ -44,5 +44,19 @@ if [ ! -f "$MODELO_PASAJEROS_PATH" ]; then
   python -c "from ultralytics import YOLO; import shutil; m=YOLO('yolo11n-seg.pt'); shutil.copy('yolo11n-seg.pt', '$MODELO_PASAJEROS_PATH')" || true
 fi
 
+# LLM del agente conversacional: Qwen con Ollama, en este mismo Pod (solo escucha en 127.0.0.1;
+# el acceso desde Internet pasa por /llm/chat del servidor, protegido con el token).
+export OLLAMA_MODELS="${OLLAMA_MODELS:-/workspace/ollama}"
+export LLM_MODELO="${LLM_MODELO:-qwen2.5:7b}"
+if ! command -v ollama > /dev/null; then
+  apt-get install -y -qq zstd > /dev/null 2>&1 || true
+  curl -fsSL https://ollama.com/install.sh | sh
+fi
+if ! curl -s http://127.0.0.1:11434/api/tags > /dev/null; then
+  nohup ollama serve > /workspace/ollama.log 2>&1 &
+  for _ in $(seq 1 30); do curl -s http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 1; done
+fi
+ollama pull "$LLM_MODELO"   # ~4,7 GB la primera vez; queda en /workspace/ollama
+
 echo "Servidor en http://0.0.0.0:8000  →  https://${RUNPOD_POD_ID:-<POD_ID>}-8000.proxy.runpod.net"
 exec uvicorn servidor_unificado:app --host 0.0.0.0 --port 8000

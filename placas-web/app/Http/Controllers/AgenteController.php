@@ -96,6 +96,14 @@ class AgenteController extends Controller
         $request->validate(['mensaje' => 'required|string|max:500']);
         $mensaje = $request->mensaje;
 
+        // 1) Agente con LLM (Qwen en RunPod) y function calling. Si no está disponible, se usan reglas.
+        if (config('services.llm.habilitado')) {
+            $respuestaLlm = $this->chatConLlm($mensaje);
+            if ($respuestaLlm !== null) {
+                return response()->json($respuestaLlm);
+            }
+        }
+
         // Aceptar códigos alfanuméricos y evitar confundir palabras como "dime" con una placa.
         preg_match_all('/(?<![A-Z0-9])[A-Z0-9]{4,8}(?![A-Z0-9])/i', $mensaje, $matches);
         $placas = array_values(array_unique(array_filter(
@@ -118,7 +126,147 @@ class AgenteController extends Controller
             'placa'     => $posiblePlaca,
             'respuesta' => $estado['mensaje'],
             'datos'     => $estado,
+            'motor'     => 'reglas',
         ]);
+    }
+
+    /**
+     * Agente con LLM propio (Qwen vía Ollama en RunPod) usando function calling.
+     * El LLM solo decide qué herramienta llamar y redacta la respuesta; los datos salen
+     * exclusivamente de la base de datos a través de las herramientas. Devuelve null si falla.
+     */
+    private function chatConLlm(string $mensaje): ?array
+    {
+        $url = rtrim((string) config('services.inference.url', ''), '/');
+        $token = (string) config('services.inference.token', '');
+        if ($url === '' || $token === '') {
+            return null;
+        }
+
+        $herramientas = [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'consultar_placa',
+                    'description' => 'Consulta en la base de datos del peaje el estado de una placa: si está registrada, '
+                        . 'si tiene pasos (fecha, caseta, categoría, monto), si fue detectada sin registro o si no existe. '
+                        . 'Normaliza la placa y sugiere coincidencias por errores de OCR (O/0, I/1, B/8, S/5).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => ['placa' => ['type' => 'string', 'description' => 'Placa tal como la escribió el usuario']],
+                        'required' => ['placa'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'historial_placa',
+                    'description' => 'Devuelve los últimos pasos registrados de una placa (fecha, caseta, categoría, ejes, monto, estado).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => ['placa' => ['type' => 'string']],
+                        'required' => ['placa'],
+                    ],
+                ],
+            ],
+        ];
+
+        $mensajes = [
+            ['role' => 'system', 'content' => 'Eres el agente del sistema de control de peaje. Respondes en español, breve y claro. '
+                . 'Para cualquier pregunta sobre una placa DEBES llamar a una herramienta y responder SOLO con los datos que devuelve; '
+                . 'nunca inventes fechas, montos ni propietarios. Usa el estado devuelto: registrada_con_paso, registrada_sin_paso, '
+                . 'identificada_no_registrada (posible evasión) o no_existe. Si hay sugerencias, pregunta "¿Quisiste decir…?". '
+                . 'Si el usuario no da una placa, pídesela. No respondas temas ajenos al peaje.'],
+            ['role' => 'user', 'content' => $mensaje],
+        ];
+
+        $ultimoEstado = null;
+        try {
+            for ($ronda = 0; $ronda < 4; $ronda++) {
+                $resp = Http::withHeaders(['X-API-Token' => $token])
+                    ->connectTimeout(5)->timeout(60)
+                    ->post($url . '/llm/chat', ['messages' => $mensajes, 'tools' => $herramientas]);
+                if (!$resp->successful()) {
+                    return null;
+                }
+                $msg = $resp->json('message') ?? [];
+                $llamadas = $msg['tool_calls'] ?? [];
+                $mensajes[] = ['role' => 'assistant', 'content' => $msg['content'] ?? '', 'tool_calls' => $llamadas];
+
+                if (empty($llamadas)) {
+                    $texto = trim((string) ($msg['content'] ?? ''));
+                    if ($texto === '') {
+                        return null;
+                    }
+                    return [
+                        'placa'       => $ultimoEstado['placa'] ?? null,
+                        'respuesta'   => $texto,
+                        'datos'       => $ultimoEstado,
+                        'motor'       => 'llm',
+                        'modelo'      => $resp->json('model'),
+                        'latencia_ms' => $resp->json('latencia_ms'),
+                    ];
+                }
+
+                foreach ($llamadas as $llamada) {
+                    $nombre = $llamada['function']['name'] ?? '';
+                    $args = $llamada['function']['arguments'] ?? [];
+                    if (is_string($args)) {
+                        $args = json_decode($args, true) ?: [];
+                    }
+                    $placaTexto = (string) ($args['placa'] ?? '');
+                    $placa = Vehiculo::extraerPlacaBoliviana($placaTexto) ?? Vehiculo::normalizar($placaTexto);
+
+                    if ($placa === '') {
+                        $resultado = ['error' => 'Placa vacía o inválida'];
+                    } elseif ($nombre === 'historial_placa') {
+                        $resultado = [
+                            'placa' => $placa,
+                            'pasos' => \App\Models\Paso::with('caseta')->where('placa_normalizada', $placa)
+                                ->latest()->limit(5)->get()
+                                ->map(fn ($p) => [
+                                    'fecha' => $p->created_at->format('d/m/Y H:i'), 'caseta' => $p->caseta?->nombre,
+                                    'categoria' => $p->categoria_detectada, 'ejes' => $p->ejes_detectados,
+                                    'monto_bs' => $p->monto, 'estado' => $p->estado,
+                                ])->all(),
+                        ];
+                    } else {
+                        $ultimoEstado = $this->estadoPlaca($placa);
+                        $resultado = $this->resumenParaLlm($ultimoEstado);
+                    }
+
+                    $mensajes[] = ['role' => 'tool', 'content' => json_encode($resultado, JSON_UNESCAPED_UNICODE)];
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return null;
+    }
+
+    /** Versión compacta del estado de una placa para enviar al LLM (sin modelos Eloquent completos). */
+    private function resumenParaLlm(array $estado): array
+    {
+        $ultimo = $estado['ultimo_paso'] ?? null;
+        $vehiculo = $estado['vehiculo'] ?? null;
+
+        return array_filter([
+            'placa'       => $estado['placa'] ?? null,
+            'estado'      => $estado['estado'] ?? null,
+            'mensaje'     => $estado['mensaje'] ?? null,
+            'sugerencias' => $estado['sugerencias'] ?? null,
+            'propietario' => $vehiculo?->propietario,
+            'categoria_registrada' => $vehiculo?->categoria,
+            'saldo_bs'    => $vehiculo?->saldo,
+            'ultimo_paso' => $ultimo ? [
+                'fecha' => $ultimo->created_at->format('d/m/Y H:i'),
+                'caseta' => $ultimo->caseta?->nombre,
+                'categoria' => $ultimo->categoria_detectada,
+                'monto_bs' => $ultimo->monto,
+            ] : null,
+        ], fn ($v) => $v !== null && $v !== []);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

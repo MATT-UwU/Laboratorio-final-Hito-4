@@ -50,6 +50,12 @@ return [
         'token' => env('INFERENCE_API_TOKEN', ''),
     ],
 
+    // Agente conversacional con LLM propio (Qwen vía Ollama en RunPod, a través de INFERENCE_URL/llm/chat).
+    // Si está desactivado o no responde, el agente usa las reglas deterministas.
+    'llm' => [
+        'habilitado' => (bool) env('AGENTE_LLM', false),
+    ],
+
     // Dispositivo de alerta físico (ESP32): token propio, solo lectura del estado.
     'dispositivo' => [
         'token' => env('DEVICE_TOKEN', ''),

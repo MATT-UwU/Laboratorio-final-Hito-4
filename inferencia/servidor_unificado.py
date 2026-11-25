@@ -469,6 +469,61 @@ async def predict(
         }
     }
 
+# ─── LLM DEL AGENTE CONVERSACIONAL (Qwen vía Ollama, en el mismo Pod de RunPod) ─────────────
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
+LLM_MODELO = os.environ.get("LLM_MODELO", "qwen2.5:7b")
+
+
+def _ollama(ruta: str, cuerpo: Optional[dict] = None, timeout: int = 120) -> dict:
+    import json as _json
+    import urllib.request
+    datos = None if cuerpo is None else _json.dumps(cuerpo).encode("utf-8")
+    req = urllib.request.Request(
+        OLLAMA_URL.rstrip("/") + ruta, data=datos,
+        headers={"Content-Type": "application/json"}, method="POST" if datos else "GET",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return _json.loads(r.read().decode("utf-8"))
+
+
+@app.get("/llm/estado")
+def llm_estado(x_api_token: Optional[str] = Header(default=None)):
+    """Indica si Ollama responde y si el modelo Qwen está descargado."""
+    if not INFERENCE_API_TOKEN or not x_api_token or not hmac.compare_digest(x_api_token, INFERENCE_API_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    try:
+        modelos = [m.get("name") for m in _ollama("/api/tags", timeout=5).get("models", [])]
+        return {"ollama": True, "modelo": LLM_MODELO, "modelo_disponible": any(m.startswith(LLM_MODELO) for m in modelos), "modelos": modelos}
+    except Exception as e:
+        return {"ollama": False, "modelo": LLM_MODELO, "error": str(e)}
+
+
+@app.post("/llm/chat")
+def llm_chat(cuerpo: Dict[str, Any], x_api_token: Optional[str] = Header(default=None)):
+    """
+    Reenvía una conversación con herramientas (function calling) al LLM local (Ollama).
+    Cuerpo: {"messages": [...], "tools": [...]} en el formato de /api/chat de Ollama.
+    Las herramientas las ejecuta Laravel contra la base de datos: el LLM solo decide cuál llamar
+    y redacta la respuesta con los datos devueltos.
+    """
+    if not INFERENCE_API_TOKEN or not x_api_token or not hmac.compare_digest(x_api_token, INFERENCE_API_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    t0 = time.perf_counter()
+    try:
+        resp = _ollama("/api/chat", {
+            "model": cuerpo.get("model") or LLM_MODELO,
+            "messages": cuerpo.get("messages", []),
+            "tools": cuerpo.get("tools", []),
+            "stream": False,
+            "options": {"temperature": 0.1},
+        })
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"LLM no disponible: {e}")
+    resp["latencia_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+    return resp
+
+
 if __name__ == "__main__":
     puerto = int(os.environ.get("PORT", 8000))
     print(f"Iniciando servidor de inferencia unificado en puerto {puerto}...")
