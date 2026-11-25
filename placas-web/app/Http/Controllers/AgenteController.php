@@ -223,6 +223,21 @@ class AgenteController extends Controller
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'trafico',
+                    'description' => 'Tráfico por día: cantidad de vehículos, camiones, vehículos por categoría y pasajeros contados. '
+                        . 'Por defecto hoy; con "dias" devuelve los últimos N días (máx. 30) hasta "fecha".',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'fecha' => ['type' => 'string', 'description' => 'Último día del rango en formato AAAA-MM-DD; vacío = hoy'],
+                            'dias' => ['type' => 'integer', 'description' => 'Cantidad de días hacia atrás (1 = solo ese día)'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'tarifas',
                     'description' => 'Tarifas vigentes en Bs por categoría (moto, auto, minibus, camion, bus) y número de ejes.',
                     'parameters' => [
@@ -241,7 +256,8 @@ class AgenteController extends Controller
                 . 'Para cualquier pregunta sobre una placa DEBES llamar a una herramienta y responder SOLO con los datos que devuelve; '
                 . 'nunca inventes fechas, montos ni propietarios. Usa el estado devuelto: registrada_con_paso, registrada_sin_paso, '
                 . 'identificada_no_registrada (posible evasión) o no_existe. Si hay sugerencias, pregunta "¿Quisiste decir…?". '
-                . 'También puedes informar datos del vehículo, el resumen del día (pasos y recaudación por caseta), alertas, '
+                . 'También puedes informar datos del vehículo, el resumen del día (pasos y recaudación por caseta), el tráfico por día '
+                . '(vehículos, camiones y pasajeros), alertas, '
                 . 'placas filtradas y tarifas, siempre usando las herramientas. Montos en Bs. '
                 . 'Si el usuario pregunta por una placa sin darla, pídesela. No respondas temas ajenos al peaje.'],
             ['role' => 'user', 'content' => $mensaje],
@@ -399,6 +415,35 @@ class AgenteController extends Controller
                         'placa' => $p->placa, 'fecha' => $p->created_at->format('d/m/Y H:i'),
                         'origen' => $p->origen, 'caseta' => $p->caseta?->nombre,
                     ])->all(),
+                ];
+
+            case 'trafico':
+                // Tráfico por día: vehículos por categoría (incluye camiones) y pasajeros contados.
+                $dias = max(1, min(30, (int) ($args['dias'] ?? 1)));
+                $hasta = !empty($args['fecha']) ? \Carbon\Carbon::parse((string) $args['fecha'])->startOfDay() : today();
+                $desde = (clone $hasta)->subDays($dias - 1);
+                $filas = \App\Models\Paso::whereBetween('created_at', [$desde, (clone $hasta)->endOfDay()])
+                    ->selectRaw('DATE(created_at) as dia, categoria_detectada as categoria, count(*) as pasos, '
+                        . 'sum(coalesce(pasajeros, 0)) as pasajeros, sum(case when pasajeros is null then 0 else 1 end) as con_conteo')
+                    ->groupBy('dia', 'categoria')->orderBy('dia')->get();
+                $porDia = [];
+                foreach ($filas as $f) {
+                    $d = (string) $f->dia;
+                    $porDia[$d] ??= ['fecha' => \Carbon\Carbon::parse($d)->format('d/m/Y'), 'vehiculos' => 0, 'camiones' => 0,
+                        'pasajeros' => 0, 'pasos_con_conteo_de_pasajeros' => 0, 'por_categoria' => []];
+                    $porDia[$d]['vehiculos'] += (int) $f->pasos;
+                    $porDia[$d]['pasajeros'] += (int) $f->pasajeros;
+                    $porDia[$d]['pasos_con_conteo_de_pasajeros'] += (int) $f->con_conteo;
+                    $porDia[$d]['por_categoria'][$f->categoria ?? 'sin_categoria'] = (int) $f->pasos;
+                    if ($f->categoria === 'camion') {
+                        $porDia[$d]['camiones'] += (int) $f->pasos;
+                    }
+                }
+                return [
+                    'desde' => $desde->format('d/m/Y'),
+                    'hasta' => $hasta->format('d/m/Y'),
+                    'dias' => array_values($porDia),
+                    'nota' => 'Cada paso es un vehículo registrado por una caseta; pasajeros = personas visibles contadas por el modelo de segmentación.',
                 ];
 
             case 'tarifas':
