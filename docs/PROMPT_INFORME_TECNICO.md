@@ -29,7 +29,7 @@ Eres un ingeniero de Machine Learning y desarrollo de software que redacta infor
 - Laboratorio Final de Hito (Laboratorio 3) — Entrega: 25/11/2026
 - Integrante: Matías Darío Mercier Rengel (desarrollo completo: datasets, entrenamiento, inferencia, web, agente, app móvil, despliegue)
 - Docente: Álvaro Pinto
-- Enlaces: aplicación web **https://peaje.xn--camaracomercioespaola-tbc.tech** (dominio IDN: peaje.camaracomercioespañola.tech) · Repositorio: ⟦URL del repositorio Git⟧ · Carpeta de evidencias: ⟦URL de Drive⟧ · Dataset M2 Roboflow: workspace `matias-dario-mercier-rengel`, proyecto `car-motorcycle-bus-truck-ghnhh-gu1ay`, versión 1 · Dataset M3 Roboflow: ⟦workspace/proyecto/versión⟧
+- Enlaces: aplicación web **https://peaje.xn--camaracomercioespaola-tbc.tech** (dominio IDN: peaje.camaracomercioespañola.tech) · Repositorio: https://github.com/MATT-UwU/Laboratorio-final-Hito-4 · Carpeta de evidencias: ⟦URL de Drive⟧ · Dataset M2 Roboflow: workspace `matias-dario-mercier-rengel`, proyecto `car-motorcycle-bus-truck-ghnhh-gu1ay`, versión 1 · Dataset M3 Roboflow: `matias-dario-mercier-rengel/llantas-ejes` v1 (39 imágenes)
 
 ---
 

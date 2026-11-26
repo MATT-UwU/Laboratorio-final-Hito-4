@@ -15,6 +15,7 @@ Sistema de punta a punta que identifica vehículos a partir del video de una app
 | Recurso | URL |
 |---|---|
 | Aplicación web (producción) | https://peaje.xn--camaracomercioespaola-tbc.tech (peaje.camaracomercioespañola.tech) |
+| Repositorio | https://github.com/MATT-UwU/Laboratorio-final-Hito-4 |
 | Dataset M2 (Roboflow) | `matias-dario-mercier-rengel/car-motorcycle-bus-truck-ghnhh-gu1ay` v1 — basado en el dataset público de Universe `new-workspace-heijb/car-motorcycle-bus-truck-ghnhh` |
 | Dataset M3 (Roboflow) | `matias-dario-mercier-rengel/llantas-ejes` v1 (fotos propias + Universe, keypoints corregidos a mano) |
 | Endpoint de inferencia | Google Colab + Cloudflare Tunnel (URL temporal, configurada como `INFERENCE_URL`) o RunPod (`https://<POD_ID>-8000.proxy.runpod.net`) |
