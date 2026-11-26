@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 """Lee placas con EasyOCR (entorno mamba).
 
 Uso: python placas_easyocr.py ruta/imagen.jpg

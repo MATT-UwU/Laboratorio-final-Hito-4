@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 # Arranque del servidor de inferencia en un Pod de RunPod (bonificación "Inferencia en RunPod en vivo").
 #
 # Uso dentro del Pod (terminal web de RunPod):

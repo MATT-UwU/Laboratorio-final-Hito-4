@@ -1,3 +1,4 @@
+{{-- © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4 --}}
 {{-- Dibuja sobre cada evidencia las cajas de la inferencia y arma tarjetas nuevas en tiempo real. --}}
 <style>
     .leyenda-inferencia span { display: inline-flex; align-items: center; gap: .3rem; margin-right: .8rem; }

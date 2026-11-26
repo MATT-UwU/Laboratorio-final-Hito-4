@@ -1,3 +1,4 @@
+// © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 #include "my_application.h"
 
 #include <flutter_linux/flutter_linux.h>

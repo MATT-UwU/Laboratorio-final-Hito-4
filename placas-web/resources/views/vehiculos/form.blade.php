@@ -1,3 +1,4 @@
+{{-- © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4 --}}
 @extends('layouts.app')
 @section('title', $vehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo')
 @section('page-title', $vehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo')

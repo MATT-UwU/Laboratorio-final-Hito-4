@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 # syntax=docker/dockerfile:1
 # Imagen de producción del panel web del peaje (Laravel 12, Blade, MySQL).
 # La inferencia de IA corre en Google Colab: este contenedor no lleva Python ni modelos.

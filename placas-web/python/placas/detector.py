@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 """Detector de placas compartido por los tres entornos (YOLOv9-t en ONNX).
 
 Cada script de lectura importa este archivo, así los tres usan las mismas cajas.

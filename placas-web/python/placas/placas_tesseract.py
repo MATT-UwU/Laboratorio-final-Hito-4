@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 """Lee placas con Tesseract (entorno conda).
 
 Uso: python placas_tesseract.py ruta/imagen.jpg

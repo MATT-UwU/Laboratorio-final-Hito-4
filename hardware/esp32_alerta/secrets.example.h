@@ -1,3 +1,4 @@
+// © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 // Copia este archivo como secrets.h y completa los valores. secrets.h NO se sube al repositorio.
 #pragma once
 

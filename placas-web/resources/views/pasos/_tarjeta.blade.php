@@ -1,3 +1,4 @@
+{{-- © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4 --}}
 {{-- Tarjeta de un paso con la evidencia visible y las cajas de la inferencia dibujadas encima. --}}
 @php
     $overlay = $paso->overlay;

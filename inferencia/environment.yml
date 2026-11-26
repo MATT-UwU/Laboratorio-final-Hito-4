@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados. https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 # Entorno conda/mamba del servidor de inferencia (M1 + M2 + M3 + pasajeros).
 # Crear:   mamba env create -f environment.yml      (o: conda env create -f environment.yml)
 # Activar: conda activate peaje-inferencia
