@@ -37,6 +37,8 @@ class PasosController extends Controller
 
         $usuario  = $request->user();
         $casetaId = $request->caseta_id;
+        // Foto subida a mano desde la web: sin control de duplicados ni filtro de confianza de video.
+        $manual   = (bool) $request->attributes->get('subida_manual', false);
 
         // 1. Llamar al endpoint de inferencia (RunPod/Colab)
         $inferenceUrl = config('services.inference.url', '');
@@ -105,6 +107,8 @@ class PasosController extends Controller
         $conf = $confianza !== null ? (float) $confianza : 0.0;
         if ($placaBoliviana !== null && $conf >= self::PLACA_MIN_CONFIANZA_PATRON) {
             $placaNorm = $placaBoliviana;
+        } elseif ($manual && $placaNorm !== null && strlen($placaNorm) >= 4) {
+            // Foto estática elegida por el operador: se acepta la lectura aunque la confianza sea baja.
         } elseif ($placaNorm !== null
             && (strlen($placaNorm) < self::PLACA_MIN_CARACTERES || $conf < self::PLACA_MIN_CONFIANZA)) {
             // Lecturas basura del OCR en video no generan pasos ni alertas.
@@ -114,7 +118,7 @@ class PasosController extends Controller
         $estadoFrame = Cache::get($estadoFrameKey);
 
         if (!$placaNorm) {
-            if (is_array($estadoFrame) && !empty($estadoFrame['placa'])) {
+            if (!$manual && is_array($estadoFrame) && !empty($estadoFrame['placa'])) {
                 $faltas = ($estadoFrame['faltas'] ?? 0) + 1;
                 if ($faltas >= self::FRAME_MISSES_TO_RELEASE) {
                     Cache::forget($estadoFrameKey);
@@ -245,6 +249,32 @@ class PasosController extends Controller
     }
 
     /** Panel web: listado de pasos recientes */
+    /** GET /procesar — página para subir fotos y procesarlas como si vinieran de una caseta. */
+    public function procesarForm()
+    {
+        return view('pasos.procesar', ['casetas' => Caseta::where('activa', true)->orderBy('id')->get(['id', 'nombre'])]);
+    }
+
+    /**
+     * POST /procesar — misma lógica que POST /api/v1/pasos/frame (inferencia, tarifa, alerta, filtro, SSE),
+     * pero con la sesión web y sin control de duplicados. Devuelve además la tarjeta para mostrar el resultado.
+     */
+    public function procesarWeb(Request $request)
+    {
+        $request->attributes->set('subida_manual', true);
+        $respuesta = $this->recibirFrame($request);
+        $datos = $respuesta->getData(true);
+        if (!empty($datos['paso']['id']) && ($paso = Paso::with(['caseta', 'alerta'])->find($datos['paso']['id']))) {
+            $datos['tarjeta'] = [
+                'id' => $paso->id, 'placa' => $paso->placa_normalizada ?? $paso->placa_leida, 'estado' => $paso->estado,
+                'categoria' => $paso->categoria_detectada, 'ejes' => $paso->ejes_detectados, 'pasajeros' => $paso->pasajeros,
+                'monto' => $paso->monto, 'caseta' => $paso->caseta?->nombre, 'hora' => $paso->created_at->format('H:i:s'),
+                'imagen_url' => $paso->imagen_url, 'overlay' => $paso->overlay,
+            ];
+        }
+        return response()->json($datos, $respuesta->getStatusCode());
+    }
+
     public function index()
     {
         $pasos = Paso::with(['caseta','usuario','alerta'])

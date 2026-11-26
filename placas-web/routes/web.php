@@ -28,6 +28,10 @@ Route::middleware('auth')->group(function () {
     // Pasos (historial web)
     Route::get('/pasos', [PasosController::class, 'index'])->name('pasos.index');
 
+    // Procesar fotos subidas desde la web (mismo flujo que la caseta)
+    Route::get('/procesar', [PasosController::class, 'procesarForm'])->name('procesar.form');
+    Route::post('/procesar', [PasosController::class, 'procesarWeb'])->name('procesar.enviar');
+
     // Placas que cumplen el filtro del estudiante (números 2…2, letras con M)
     Route::get('/placas-filtradas', [\App\Http\Controllers\PlacasFiltradasController::class, 'index'])->name('placas-filtradas.index');
 

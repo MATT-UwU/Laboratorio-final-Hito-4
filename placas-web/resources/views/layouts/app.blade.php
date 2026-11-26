@@ -135,6 +135,12 @@
                         <span>Registro de Pasos</span>
                     </a>
 
+                    <a href="{{ route('procesar.form') }}"
+                       class="sidebar-link {{ request()->routeIs('procesar.*') ? 'active' : '' }}">
+                        <i class="fas fa-camera w-5 text-center text-sky-400"></i>
+                        <span>Procesar imagen</span>
+                    </a>
+
                     <a href="{{ route('placas-filtradas.index') }}"
                        class="sidebar-link {{ request()->routeIs('placas-filtradas.*') ? 'active' : '' }}">
                         <i class="fas fa-filter w-5 text-center text-lime-400"></i>
