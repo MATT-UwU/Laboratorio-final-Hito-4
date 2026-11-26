@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- © 2026 Matías Darío Mercier Rengel. Todos los derechos reservados. -->
+    <meta name="author" content="Matías Darío Mercier Rengel">
+    <meta name="copyright" content="© 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión — Peaje Inteligente</title>
@@ -59,6 +62,7 @@
         <p class="text-gray-500 text-xs text-center mt-6">
             Solo cuentas en la lista blanca de la base de datos están autorizadas.
         </p>
+        <p class="text-gray-600 text-[11px] text-center mt-3">© 2026 Matías Darío Mercier Rengel · Proyecto desarrollado por Matías Mercier</p>
     </div>
 </body>
 </html>

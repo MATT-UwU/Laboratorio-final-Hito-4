@@ -1,3 +1,4 @@
+// © 2026 Matías Darío Mercier Rengel — Dispositivo de alerta ESP32 del Sistema Inteligente de Control de Peaje. Todos los derechos reservados.
 /*
  * Dispositivo de alerta del peaje (bonificación "Conexión de alerta a un dispositivo de hardware").
  *

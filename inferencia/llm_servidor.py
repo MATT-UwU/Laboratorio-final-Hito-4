@@ -1,3 +1,4 @@
+# © 2026 Matías Darío Mercier Rengel — Chatbot (Qwen) del Sistema Inteligente de Control de Peaje. Todos los derechos reservados.
 """
 Servidor del LLM del agente conversacional (Qwen vía Ollama) para RunPod.
 
@@ -44,7 +45,7 @@ def raiz():
         listo = any(m.startswith(LLM_MODELO) for m in modelos)
     except Exception:
         modelos, listo = [], False
-    return {"estado": "activo", "servicio": "llm", "modelo": LLM_MODELO, "modelo_disponible": listo}
+    return {"estado": "activo", "servicio": "llm", "autor": "Matías Darío Mercier Rengel", "modelo": LLM_MODELO, "modelo_disponible": listo}
 
 
 @app.get("/llm/estado")

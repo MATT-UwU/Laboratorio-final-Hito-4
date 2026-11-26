@@ -2,6 +2,8 @@
 
 **IAM-811 Machine Learning y Aprendizaje Profundo — Laboratorio Final de Hito (UNIFRANZ, 2026)**
 
+> © 2026 **Matías Darío Mercier Rengel**. Todos los derechos reservados — ver [`LICENSE`](LICENSE) y [`AUTHORS.md`](AUTHORS.md). Repositorio público solo para la revisión académica del docente: no se autoriza su copia ni su entrega como trabajo propio.
+
 Sistema de punta a punta que identifica vehículos a partir del video de una app móvil: lee la placa (M1 + OCR), clasifica el vehículo por segmentación de instancias (M2), cuenta los ejes con keypoints de llantas (M3) y cuenta pasajeros (bonificación). La aplicación web publicada en un subdominio HTTPS registra cada paso en tiempo real, genera alertas, aplica tarifas y ofrece un agente conversacional. El acceso es exclusivamente con Google.
 
 ## Integrantes

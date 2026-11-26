@@ -2,7 +2,8 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/laravel",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Sistema Inteligente de Control de Peaje — aplicación web. © 2026 Matías Darío Mercier Rengel.",
+    "authors": [{"name": "Matías Darío Mercier Rengel", "role": "Autor"}],
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {

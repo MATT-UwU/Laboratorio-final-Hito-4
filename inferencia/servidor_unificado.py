@@ -1,3 +1,5 @@
+# © 2026 Matías Darío Mercier Rengel — Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados.
+# Repositorio original: https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 import os
 import sys
 import time
@@ -43,7 +45,7 @@ import uvicorn
 
 app = FastAPI(
     title="Endpoint Unificado de Inferencia - Control de Peaje",
-    description="Integra M1 (Placas + OCR), M2 (Segmentación de Categoría) y M3 (Keypoints de Ruedas / Ejes)",
+    description="Integra M1 (Placas + OCR), M2 (Segmentación de Categoría) y M3 (Keypoints de Ruedas / Ejes). Autor: Matías Darío Mercier Rengel (© 2026).",
     version="1.0.0"
 )
 
@@ -391,6 +393,7 @@ def inferir_m3_ejes(
 def estado():
     return {
         "estado": "activo",
+        "autor": "Matías Darío Mercier Rengel",
         "dispositivo": DISPOSITIVO,
         "cuda": CUDA_DISPONIBLE,
         "m1_cargado": m1_session is not None,

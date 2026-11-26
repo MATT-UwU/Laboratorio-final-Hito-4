@@ -1,3 +1,5 @@
+// © 2026 Matías Darío Mercier Rengel — App móvil del Sistema Inteligente de Control de Peaje (UNIFRANZ). Todos los derechos reservados.
+// Repositorio original: https://github.com/MATT-UwU/Laboratorio-final-Hito-4
 import 'dart:async';
 import 'dart:io' show SocketException;
 import 'dart:convert';
@@ -226,6 +228,12 @@ class _AuthWrapperScreenState extends State<AuthWrapperScreen> {
               const Text(
                 'Sistema de Detección de Vehículos y Placas',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '© 2026 Matías Darío Mercier Rengel',
+                style: TextStyle(fontSize: 11, color: Colors.white38),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
